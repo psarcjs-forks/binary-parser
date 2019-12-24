@@ -42,6 +42,9 @@
     "url": "http://github.com/keichi/binary-parser.git"
   },
   "bugs": "http://github.com/keichi/binary-parser/issues",
+  "dependencies": {
+    "smart-buffer": "^4.0.1"
+  },
   "engines": {
     "node": ">=5.10.0"
   }

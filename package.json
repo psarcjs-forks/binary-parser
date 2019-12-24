@@ -1,14 +1,15 @@
 {
-  "name": "binary-parser",
-  "version": "1.4.0",
+  "name": "binary-parser-encoder",
+  "version": "1.5.2",
   "description": "Blazing-fast binary parser builder",
   "main": "dist/binary_parser.js",
+  "types": "dist/binary_parser.d.ts",
   "devDependencies": {
-    "mocha": "^6.1.4",
+    "mocha": "^6.2.2",
     "nyc": "^14.1.1",
-    "prettier": "^1.17.1",
-    "@types/node": "^12.0.4",
-    "typescript": "^3.5.1"
+    "prettier": "^1.19.1",
+    "@types/node": "^12.12.12",
+    "typescript": "^3.7.2"
   },
   "scripts": {
     "build": "tsc",
@@ -20,12 +21,15 @@
     "prepare": "npm run build"
   },
   "files": [
-    "dist/*.js"
+    "dist/*.js",
+    "dist/binary_parser.d.ts"
   ],
   "keywords": [
     "binary",
     "parser",
     "decode",
+    "encoder",
+    "encode",
     "unpack",
     "struct",
     "buffer",
@@ -36,16 +40,22 @@
     "email": "keichi.t@me.com",
     "url": "https://keichi.net/"
   },
+  "contributors": [
+    {
+      "name": "Eric Blanchard",
+      "email": "ericbla@gmail.com"
+    }
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "http://github.com/keichi/binary-parser.git"
+    "url": "http://github.com/Ericbla/binary-parser.git"
   },
-  "bugs": "http://github.com/keichi/binary-parser/issues",
+  "bugs": "http://github.com/Ericbla/binary-parser/issues",
   "dependencies": {
-    "smart-buffer": "^4.0.1"
+    "smart-buffer": "^4.1.0"
   },
   "engines": {
-    "node": ">=5.10.0"
+    "node": ">=6.4.0"
   }
 }

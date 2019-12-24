@@ -1,6 +1,13 @@
-# Binary-parser
+# Binary-parser-encoder
 
-[![Circle CI](https://circleci.com/gh/keichi/binary-parser.svg?style=svg)](https://circleci.com/gh/keichi/binary-parser)
+<u>Note</u>: This is a fork of [binary-parser](https://github.com/keichi/binary-parser)
+library. It is currently being proposed as a Pull-Request in that project.
+
+Until the *encoding* feature is merged in baseline of original project,
+this branch is published under the name: **binary-parser-encoder** in [npm](https://npmjs.org/).
+
+
+[![Circle CI](https://circleci.com/gh/Ericbla/binary-parser.svg?style=svg)](https://circleci.com/gh/Ericbla/binary-parser)
 
 Binary-parser is a binary parser/encoder builder for [node](http://nodejs.org) that
 enables you to write efficient parsers/encoders in a simple and declarative manner.
@@ -29,7 +36,7 @@ and [binary](https://github.com/substack/node-binary).
 
 ## Quick Start
 1. Create an empty Parser object with `new Parser()` or `Parser.start()`.
-2. Chain methods to build your desired parser. (See
+2. Chain methods to build your desired parser and/or encoder. (See
    [API](https://github.com/keichi/binary-parser#api) for detailed document of
    each method)
 3. Call `Parser.prototype.parse` with an `Buffer` object passed as an argument.
@@ -159,18 +166,26 @@ the following keys:
   Supported encodings include `"utf8"`, `"ascii"` and `"hex"`. See
   [`Buffer.toString`](http://nodejs.org/api/buffer.html#buffer_buf_tostring_encoding_start_end)
   for more info.
-- `length ` - (Optional) (Bytes)Length of the string. Can be a number, string or a
+- `length` - (Optional) (Bytes)Length of the string. Can be a number, string or a
   function. Use number for statically sized arrays, string to reference
   another variable and function to do some calculation.
-  Note: when encoding the string is padded with spaces (0x20) at end to fit the length requirement.
+  Note: When encoding the string is padded with a `padd` charecter to fit the length requirement.
 - `zeroTerminated` - (Optional, defaults to `false`) If true, then this parser
-  reads until it reaches zero.
+  reads until it reaches zero (or the specified `length`). When encoding, a *null* character is inserted at end of
+  the string (if the optional `length` allows it).
 - `greedy` - (Optional, defaults to `false`) If true, then this parser reads
   until it reaches the end of the buffer. Will consume zero-bytes. (Note: has
   no effect on encoding function)
 - `stripNull` - (Optional, must be used with `length`) If true, then strip
-  null characters from end of the string. (Note: has no effect on encoding, but
-  when used, then the parse() and encode() functions are not the exact opposite)
+  null characters from end of the string. (Note: When encoding, this will also set the **default** `padd` character
+  to null instead of space)
+- `trim` - (Optional, default to `false`) If true, then trim() (remove leading and trailing spaces)
+  the parsed string.
+- `padding` - (Optional, Only used for encoding, default to `right`) If `left` then the string
+  will be right aligned (padding left with `padd` char or space) depending of the `length` option
+- `padd` - (Optional, Only used for encoding with `length` specified) A string  from which first character (1 Byte)
+  is used as a padding char if necessary (provided string length is less than `length` option). Note: Only 'ascii'
+  or utf8 < 0x80  are alowed. Note: The default padd character is *space* (or *null* when `stripNull` is used).
 
 ### buffer(name[, options])
 Parse bytes as a buffer. `name` should consist only of alpha numeric
@@ -187,14 +202,10 @@ the following keys:
   sized buffers, string to reference another variable and function to do some
   calculation.
 - `readUntil` - (either `length` or `readUntil` is required) If `"eof"`, then
-<<<<<<< HEAD
-  this parser will read till it reaches end of the `Buffer` object. If it is a
-  function, this parser will read the buffer is read until the function
-  returns true.
-=======
   this parser will read till it reaches end of the `Buffer` object. (Note: has no
   effect on encoding.)
->>>>>>> Ericbla/PR_Encode
+  If it is a function, this parser will read the buffer is read until the
+  function returns true.
 
 ### array(name, options)
 Parse bytes as an array. `options` is an object which can have the following
@@ -211,7 +222,12 @@ keys:
   a function. Use number for statically sized arrays.
 - `readUntil` - (either `length`, `lengthInBytes`, or `readUntil` is required)
   If `"eof"`, then this parser reads until the end of `Buffer` object. If
-  function it reads until the function returns true.
+  function it reads until the function returns true. **<u>Note</u>**: When encoding,
+  the `buffer` second parameter of `readUntil` function is the buffer already encoded
+  before this array. So no *read-ahead* is possible.
+- `encodeUntil` - a function (item, object), only used when encoding, that replaces
+  the `readUntil` function when present and allow limit the number of encoded items
+  by returning true based on *item* values or other *object* properies.
 
 ```javascript
 var parser = new Parser()
@@ -310,7 +326,6 @@ current object. `options` is an object which can have the following keys:
 
 - `type` - (Required) A `Parser` object.
 
-<<<<<<< HEAD
 ### pointer(name [,options])
 Jump to `offset`, execute parser for `type` and rewind to previous offset.
 Useful for parsing binary formats such as ELF where the offset of a field is
@@ -350,11 +365,7 @@ var parser = new Parser()
 ### seek(relOffset)
 Move the buffer offset for `relOffset` bytes from the current position. Use a
 negative `relOffset` value to rewind the offset. Previously named `skip(length)`.
-=======
-### skip(length)
-Skip parsing for `length` bytes. (Note: when encoding, the skipped bytes will be filled
-with zeros)
->>>>>>> Ericbla/PR_Encode
+(Note: when encoding, the skipped bytes will be filled with zeros)
 
 ### endianess(endianess)
 Define what endianess to use in this parser. `endianess` can be either
@@ -369,6 +380,21 @@ var parser = new Parser()
   // Or you can omit endianess (in this case, little-endian is used)
   .uint16("b")
   .int32("c");
+```
+
+### setEncoderOptions(opts)
+Set specific options for encoding.
+Current supported `opts` object may contain:
+  - bitEndianess: true|false (default false) When true, tell the encoder to respect endianess BITs order, so that
+    encoding is exactly the reverse of the parsing process for bits fields.
+
+```javascript
+var parser = new Parser()
+  .endianess("little")
+  .setEncoderOpts({bitEndianess: true}) // Use BITs endianess for bits fields
+  .bit4("a")
+  .bit4("b")
+  .uint16("c");
 ```
 
 ### namely(alias)
@@ -470,15 +496,9 @@ Compile this parser/encoder on-the-fly and cache its result. Usually, there is n
 to call this method directly, since it's called when `parse(buffer)` or `encode(obj)` is
 executed for the first time.
 
-<<<<<<< HEAD
-### getCode()
-Dynamically generates the code for this parser and returns it as a string.
-Useful for debugging the generated code.
-=======
 ### getCode() and getCodeEncode()
 Dynamically generates the code for this parser/encoder and returns it as a string.
-Usually used for debugging.
->>>>>>> Ericbla/PR_Encode
+Useful for debugging the generated code.
 
 ### Common options
 These options can be used in all parsers.
